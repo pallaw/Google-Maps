@@ -3,8 +3,12 @@ package com.pallaw.mapspractice
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.pm.PackageManager
+import android.location.Geocoder
 import android.os.Bundle
 import android.util.Log
+import android.view.KeyEvent
+import android.view.inputmethod.EditorInfo
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -18,6 +22,7 @@ import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
+import kotlinx.android.synthetic.main.activity_maps.*
 
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
@@ -32,6 +37,20 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_maps)
 
+        searchView.setOnEditorActionListener(object : TextView.OnEditorActionListener {
+            override fun onEditorAction(v: TextView?, actionId: Int, event: KeyEvent?): Boolean {
+                if (actionId == EditorInfo.IME_ACTION_DONE ||
+                    actionId == EditorInfo.IME_ACTION_SEARCH ||
+                    event?.action == KeyEvent.ACTION_DOWN ||
+                    event?.action == KeyEvent.KEYCODE_ENTER
+                ) {
+                    geoLocate()
+                }
+
+                return true
+            }
+        })
+
         if (isServiceAvailable()) {
             getLocationPermission()
         } else {
@@ -41,6 +60,19 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 Toast.LENGTH_LONG
             ).show()
         }
+    }
+
+    private fun geoLocate() {
+        val searchTexh = searchView.text.toString().trim()
+        val geocoder = Geocoder(this)
+        val fromLocationName = geocoder.getFromLocationName(searchTexh, 1)
+
+        if (fromLocationName.size > 0) {
+            val address = fromLocationName[0]
+            Log.d(TAG, "geoLocate: Location found $address")
+            moveCameraTo(LatLng(address.latitude, address.longitude), address.locality)
+        }
+
     }
 
     @SuppressLint("MissingPermission")
@@ -54,7 +86,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                     Log.d(TAG, "getDeviceLocation: current location fetched ")
                     val result = it.result
                     result?.let {
-                        moveCameraTo(LatLng(it.latitude, it.longitude))
+                        moveCameraTo(LatLng(it.latitude, it.longitude), "current Location")
                     }
                 } else
                     Log.d(TAG, "getDeviceLocation: current location is not fetched ")
@@ -62,9 +94,16 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         }
     }
 
-    private fun moveCameraTo(result: LatLng) {
+    private fun moveCameraTo(result: LatLng, title: String) {
         result.let {
             mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(it, 10.5f))
+
+            val marker = MarkerOptions().apply {
+                position(result)
+                title(title)
+            }
+            mMap.addMarker(marker)
+
         }
     }
 
