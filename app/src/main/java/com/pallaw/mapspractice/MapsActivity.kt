@@ -7,6 +7,7 @@ import android.location.Geocoder
 import android.os.Bundle
 import android.util.Log
 import android.view.KeyEvent
+import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.widget.TextView
 import android.widget.Toast
@@ -24,7 +25,7 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
 import kotlinx.android.synthetic.main.activity_maps.*
 
-class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
+class MapsActivity : AppCompatActivity(), OnMapReadyCallback, View.OnClickListener {
 
     private var mLocationPermissionGranted: Boolean = false
     private val LOCATION_PERMISSION_REQUEST_CODE: Int = 678
@@ -51,6 +52,10 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             }
         })
 
+        btnCurrentLocation.setOnClickListener(this)
+        btnMap.setOnClickListener(this)
+        btnInfo.setOnClickListener(this)
+
         if (isServiceAvailable()) {
             getLocationPermission()
         } else {
@@ -70,7 +75,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         if (fromLocationName.size > 0) {
             val address = fromLocationName[0]
             Log.d(TAG, "geoLocate: Location found $address")
-            moveCameraTo(LatLng(address.latitude, address.longitude), address.locality)
+            moveCameraTo(LatLng(address.latitude, address.longitude), address.getAddressLine(0))
         }
 
     }
@@ -96,7 +101,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
     private fun moveCameraTo(result: LatLng, title: String) {
         result.let {
-            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(it, 10.5f))
+            mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(it, 12.0f))
 
             val marker = MarkerOptions().apply {
                 position(result)
@@ -174,22 +179,21 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         return false
     }
 
-    /**
-     * Manipulates the map once available.
-     * This callback is triggered when the map is ready to be used.
-     * This is where we can add markers or lines, add listeners or move the camera. In this case,
-     * we just add a marker near Sydney, Australia.
-     * If Google Play services is not installed on the device, the user will be prompted to install
-     * it inside the SupportMapFragment. This method will only be triggered once the user has
-     * installed Google Play services and returned to the app.
-     */
+
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
-        // Add a marker in Sydney and move the camera
-        val sydney = LatLng(-34.0, 151.0)
-        mMap.addMarker(MarkerOptions().position(sydney).title("Marker in Sydney"))
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney))
-
         getDeviceLocation()
+    }
+
+    override fun onClick(v: View?) {
+        when (v) {
+            btnCurrentLocation -> {
+                getDeviceLocation()
+            }
+            btnMap -> {
+            }
+            btnInfo -> {
+            }
+        }
     }
 }
